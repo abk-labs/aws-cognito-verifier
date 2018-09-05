@@ -26,7 +26,7 @@ exports.handler = (event, context, callback) => {
       callback(null, {
         statusCode: 200,
         headers: {
-          "Access-Control-Allow-Origin": event.Headers["origin"],
+          "Access-Control-Allow-Origin": event.headers["origin"],
           "Access-Control-Allow-Methods": "POST,OPTIONS",
           "Access-Control-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key",
           "Content-Type": "application/json",
@@ -57,7 +57,7 @@ exports.handler = (event, context, callback) => {
               callback(null, {
                 statusCode: 200,
                 headers: {
-                  "Access-Control-Allow-Origin": event.Headers["origin"],
+                  "Access-Control-Allow-Origin": event.headers["origin"],
                   "Access-Control-Allow-Credentials": "true"
                 },
                 body: JSON.stringify({ error: 'Public key not found in jwks.json' })
@@ -85,7 +85,7 @@ exports.handler = (event, context, callback) => {
                     callback(null, {
                       statusCode: 200,
                       headers: {
-                        "Access-Control-Allow-Origin": event.Headers["origin"],
+                        "Access-Control-Allow-Origin": event.headers["origin"],
                         "Access-Control-Allow-Credentials": "true"
                       },
                       body: JSON.stringify(response)
@@ -95,7 +95,7 @@ exports.handler = (event, context, callback) => {
                 callback(null, {
                   statusCode: 200,
                   headers: {
-                    "Access-Control-Allow-Origin": event.Headers["origin"],
+                    "Access-Control-Allow-Origin": event.headers["origin"],
                     "Access-Control-Allow-Credentials": "true"
                   },
                   body: JSON.stringify({ error: 'Signature verification failed' })
