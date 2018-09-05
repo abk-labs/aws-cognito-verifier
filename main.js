@@ -21,94 +21,91 @@ const keysUrl = `https://cognito-idp.${region}.amazonaws.com/${userPoolId}/.well
 exports.handler = (event, context, callback) => {
   const method = event.httpMethod;
 
-  if (method === "OPTIONS") {
-    callback(null, {
-      statusCode: 200,
-      headers: {
-        "Access-Control-Allow-Origin": events.Headers["origin"],
-        "Access-Control-Allow-Methods": "POST,OPTIONS",
-        "Access-Control-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key",
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Credentials": "true"
-      },
-      body: ""
-    })
+  switch(method) {
+    case 'OPTIONS':
+      callback(null, {
+        statusCode: 200,
+        headers: {
+          "Access-Control-Allow-Origin": events.Headers["origin"],
+          "Access-Control-Allow-Methods": "POST,OPTIONS",
+          "Access-Control-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key",
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Credentials": "true"
+        },
+        body: ""
+      });
+    case 'POST':
+      const token = JSON.parse(event.body).access_token;
+      const sections = token.split('.');
+      const header = jose.util.base64url.decode(sections[0]);
+      header = JSON.parse(header);
+      const kid = header.kid;
+      // download the public keys
+      https.get(keysUrl, function(response) {
+        if (response.statusCode == 200) {
+          response.on('data', function(body) {
+            const keys = JSON.parse(body)['keys'];
+            const key_index = -1;
+            for (const i=0; i < keys.length; i++) {
+              if (kid == keys[i].kid) {
+                key_index = i;
+                break;
+              }
+            }
 
-    return;
-  } else if (method != "POST") {
-    callback('Only POST Allowed');
-  }
+            if (key_index == -1) {
+              callback(null, {
+                statusCode: 200,
+                headers: {
+                  "Access-Control-Allow-Origin": event.Headers["origin"],
+                  "Access-Control-Allow-Credentials": "true"
+                },
+                body: JSON.stringify({ error: 'Public key not found in jwks.json' })
+              });
+            }
 
-  const token = JSON.parse(event.body).access_token;
-  const sections = token.split('.');
-  const header = jose.util.base64url.decode(sections[0]);
-  header = JSON.parse(header);
-  const kid = header.kid;
-  // download the public keys
-  https.get(keysUrl, function(response) {
-    if (response.statusCode == 200) {
-      response.on('data', function(body) {
-        const keys = JSON.parse(body)['keys'];
-        const key_index = -1;
-        for (const i=0; i < keys.length; i++) {
-          if (kid == keys[i].kid) {
-            key_index = i;
-            break;
-          }
-        }
-
-        if (key_index == -1) {
-          callback(null, {
-            statusCode: 200,
-            headers: {
-              "Access-Control-Allow-Origin": event.Headers["origin"],
-              "Access-Control-Allow-Credentials": "true"
-            },
-            body: JSON.stringify({ error: 'Public key not found in jwks.json' })
-          });
-
-          return;
-        }
-
-        jose.JWK.asKey(keys[key_index]).
-          then(function(result) {
-            jose.JWS.createVerify(result).
-              verify(token).
+            jose.JWK.asKey(keys[key_index]).
               then(function(result) {
-                const claims = JSON.parse(result.payload);
-                const currentTs = Math.floor(new Date() / 1000);
+                jose.JWS.createVerify(result).
+                  verify(token).
+                  then(function(result) {
+                    const claims = JSON.parse(result.payload);
+                    const currentTs = Math.floor(new Date() / 1000);
 
-                let response = {};
+                    let response = {};
 
-                if (currentTs > claims.exp) {
-                  response = { error: 'Token is expired' };
-                } else if (claims.aud != appClientId) {
-                  response = { error: 'Token was not issued for this audience' };
-                } else {
-                  response = claims;
-                }
+                    if (currentTs > claims.exp) {
+                      response = { error: 'Token is expired' };
+                    } else if (claims.aud != appClientId) {
+                      response = { error: 'Token was not issued for this audience' };
+                    } else {
+                      response = claims;
+                    }
 
+                    callback(null, {
+                      statusCode: 200,
+                      headers: {
+                        "Access-Control-Allow-Origin": event.Headers["origin"],
+                        "Access-Control-Allow-Credentials": "true"
+                      },
+                      body: JSON.stringify(response)
+                    });
+                  }).
+              catch(function() {
                 callback(null, {
                   statusCode: 200,
                   headers: {
                     "Access-Control-Allow-Origin": event.Headers["origin"],
                     "Access-Control-Allow-Credentials": "true"
                   },
-                  body: JSON.stringify(response)
+                  body: JSON.stringify({ error: 'Signature verification failed' })
                 });
-              }).
-          catch(function() {
-            callback(null, {
-              statusCode: 403,
-              headers: {
-                "Access-Control-Allow-Origin": event.Headers["origin"],
-                "Access-Control-Allow-Credentials": "true"
-              },
-              body: JSON.stringify({ error: 'Signature verification failed' })
+              });
             });
           });
-        });
+        }
       });
-    }
-  });
+    default:
+      callback(e, null);
+  }
 }
