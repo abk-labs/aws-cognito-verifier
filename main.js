@@ -19,6 +19,26 @@ const appClientId = process.env.AWS_USER_POOL_APP_CLIENT_ID;
 const keysUrl = `https://cognito-idp.${region}.amazonaws.com/${userPoolId}/.well-known/jwks.json`;
 
 exports.handler = (event, context, callback) => {
+  const method = event.httpMethod;
+
+  if (method === "OPTIONS") {
+    callback(null, {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": events.Headers["origin"],
+        "Access-Control-Allow-Methods": "POST,OPTIONS",
+        "Access-Control-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key",
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Credentials": "true"
+      },
+      body: ""
+    })
+
+    return;
+  } else if (method != "POST") {
+    callback('Only POST Allowed');
+  }
+
   const token = JSON.parse(event.body).access_token;
   const sections = token.split('.');
   const header = jose.util.base64url.decode(sections[0]);
