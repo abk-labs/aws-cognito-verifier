@@ -36,7 +36,7 @@ exports.handler = (event, context, callback) => {
       });
       break;
     case 'POST':
-      const token = JSON.parse(event.body).access_token;
+      const token = JSON.parse(event.body).id_token;
       const sections = token.split('.');
       let header = jose.util.base64url.decode(sections[0]);
       header = JSON.parse(header);
