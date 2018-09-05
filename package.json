@@ -1,0 +1,15 @@
+{
+  "name": "verifications",
+  "version": "0.0.1",
+  "description": "AWS lambda for verifying Cognito idenitities",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo -n 'Write some tests'"
+  },
+  "keywords": [
+    "aws",
+    "lambda"
+  ],
+  "author": "Espinola Designs",
+  "license": "ISC"
+}
