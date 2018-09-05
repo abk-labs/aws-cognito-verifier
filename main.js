@@ -46,15 +46,15 @@ exports.handler = (event, context, callback) => {
         if (response.statusCode == 200) {
           response.on('data', function(body) {
             const keys = JSON.parse(body)['keys'];
-            const key_index = -1;
+            let keyIndex = -1;
             for (const i=0; i < keys.length; i++) {
               if (kid == keys[i].kid) {
-                key_index = i;
+                keyIndex = i;
                 break;
               }
             }
 
-            if (key_index == -1) {
+            if (keyIndex == -1) {
               callback(null, {
                 statusCode: 200,
                 headers: {
