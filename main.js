@@ -38,7 +38,7 @@ exports.handler = (event, context, callback) => {
     case 'POST':
       const token = JSON.parse(event.body).access_token;
       const sections = token.split('.');
-      const header = jose.util.base64url.decode(sections[0]);
+      let header = jose.util.base64url.decode(sections[0]);
       header = JSON.parse(header);
       const kid = header.kid;
       // download the public keys
@@ -108,6 +108,6 @@ exports.handler = (event, context, callback) => {
       });
       break;
     default:
-      callback(e, null);
+      callback("Unsupported HTTP method", null);
   }
 }
