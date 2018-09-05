@@ -21,7 +21,7 @@ jobs:
       - run:
           name: test
           command: npm test
-      - run: zip lambda.zip main.js node_modules
+      - run: zip -r lambda.zip main.js node_modules package.json
       - persist_to_workspace:
           root: ~/verifications
           paths:
