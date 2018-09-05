@@ -47,7 +47,7 @@ exports.handler = (event, context, callback) => {
           response.on('data', function(body) {
             const keys = JSON.parse(body)['keys'];
             let keyIndex = -1;
-            for (const i=0; i < keys.length; i++) {
+            for (let i=0; i < keys.length; i++) {
               if (kid == keys[i].kid) {
                 keyIndex = i;
                 break;
