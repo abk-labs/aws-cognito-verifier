@@ -65,7 +65,7 @@ exports.handler = (event, context, callback) => {
               });
             }
 
-            jose.JWK.asKey(keys[key_index]).
+            jose.JWK.asKey(keys[keyIndex]).
               then(function(result) {
                 jose.JWS.createVerify(result).
                   verify(token).
