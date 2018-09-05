@@ -34,6 +34,7 @@ exports.handler = (event, context, callback) => {
         },
         body: ""
       });
+      break;
     case 'POST':
       const token = JSON.parse(event.body).access_token;
       const sections = token.split('.');
@@ -105,6 +106,7 @@ exports.handler = (event, context, callback) => {
           });
         }
       });
+      break;
     default:
       callback(e, null);
   }
