@@ -26,7 +26,7 @@ exports.handler = (event, context, callback) => {
       callback(null, {
         statusCode: 200,
         headers: {
-          "Access-Control-Allow-Origin": events.Headers["origin"],
+          "Access-Control-Allow-Origin": event.Headers["origin"],
           "Access-Control-Allow-Methods": "POST,OPTIONS",
           "Access-Control-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key",
           "Content-Type": "application/json",
