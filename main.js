@@ -77,7 +77,7 @@ exports.handler = (event, context, callback) => {
 
                     if (currentTs > claims.exp) {
                       response = { error: 'Token is expired' };
-                    } else if (claims.aud != appClientId) {
+                    } else if (claims.client_id != appClientId) {
                       response = { error: 'Token was not issued for this audience' };
                     } else {
                       response = claims;
