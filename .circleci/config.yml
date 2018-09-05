@@ -21,7 +21,7 @@ jobs:
       - run:
           name: test
           command: npm test
-      - run: zip lambda.zip index.js
+      - run: zip lambda.zip main.js node_modules
       - persist_to_workspace:
           root: ~/verifications
           paths:
@@ -34,7 +34,7 @@ jobs:
       - attach_workspace:
           at: ~/verifications
       - run: aws s3 cp lambda.zip s3://api.espinoladesigns.com/lambda-verifications-prod-${CIRCLE_SHA1}.zip
-      - run: aws lambda update-function-code --function-name VerificationsProdFnc --s3-key lambda-messages-prod-${CIRCLE_SHA1}.zip --s3-bucket api.espinoladesigns.com
+      - run: aws lambda update-function-code --function-name VerificationsProdFnc --s3-key lambda-verifications-prod-${CIRCLE_SHA1}.zip --s3-bucket api.espinoladesigns.com
       - run: aws apigateway create-deployment --rest-api-id "4g46qmn0ji" --stage-name prod --description "Deployment - ${CIRCLE_SHA1}"
 workflows:
   version: 2

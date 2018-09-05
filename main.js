@@ -1,0 +1,94 @@
+/* Copyright 2017-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+ Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file
+ except in compliance with the License. A copy of the License is located at
+
+     http://aws.amazon.com/apache2.0/
+
+ or in the "license" file accompanying this file. This file is distributed on an "AS IS"
+ BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ License for the specific language governing permissions and limitations under the License.
+*/
+
+const https = require('https');
+const jose = require('node-jose');
+
+const region = process.env.AWS_DEFAULT_REGION;
+const userPoolId = process.env.AWS_USER_POOL_ID;
+const appClientId = process.env.AWS_USER_POOL_APP_CLIENT_ID;
+const keysUrl = `https://cognito-idp.${region}.amazonaws.com/${userPoolId}/.well-known/jwks.json`;
+
+exports.handler = (event, context, callback) => {
+  const token = JSON.parse(event.body).access_token;
+  const sections = token.split('.');
+  const header = jose.util.base64url.decode(sections[0]);
+  header = JSON.parse(header);
+  const kid = header.kid;
+  // download the public keys
+  https.get(keysUrl, function(response) {
+    if (response.statusCode == 200) {
+      response.on('data', function(body) {
+        const keys = JSON.parse(body)['keys'];
+        const key_index = -1;
+        for (const i=0; i < keys.length; i++) {
+          if (kid == keys[i].kid) {
+            key_index = i;
+            break;
+          }
+        }
+
+        if (key_index == -1) {
+          callback(null, {
+            statusCode: 200,
+            headers: {
+              "Access-Control-Allow-Origin": event.Headers["origin"],
+              "Access-Control-Allow-Credentials": "true"
+            },
+            body: JSON.stringify({ error: 'Public key not found in jwks.json' })
+          });
+
+          return;
+        }
+
+        jose.JWK.asKey(keys[key_index]).
+          then(function(result) {
+            jose.JWS.createVerify(result).
+              verify(token).
+              then(function(result) {
+                const claims = JSON.parse(result.payload);
+                const currentTs = Math.floor(new Date() / 1000);
+
+                let response = {};
+
+                if (currentTs > claims.exp) {
+                  response = { error: 'Token is expired' };
+                } else if (claims.aud != appClientId) {
+                  response = { error: 'Token was not issued for this audience' };
+                } else {
+                  response = claims;
+                }
+
+                callback(null, {
+                  statusCode: 200,
+                  headers: {
+                    "Access-Control-Allow-Origin": event.Headers["origin"],
+                    "Access-Control-Allow-Credentials": "true"
+                  },
+                  body: JSON.stringify(response)
+                });
+              }).
+          catch(function() {
+            callback(null, {
+              statusCode: 403,
+              headers: {
+                "Access-Control-Allow-Origin": event.Headers["origin"],
+                "Access-Control-Allow-Credentials": "true"
+              },
+              body: JSON.stringify({ error: 'Signature verification failed' })
+            });
+          });
+        });
+      });
+    }
+  });
+}
