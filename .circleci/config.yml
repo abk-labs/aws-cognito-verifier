@@ -26,7 +26,17 @@ jobs:
           root: ~/verifications
           paths:
             - lambda.zip
-  deploy:
+  deploy-dev:
+    working_directory: ~/verifications
+    docker:
+      - image: cgswong/aws:latest
+    steps:
+      - attach_workspace:
+          at: ~/verifications
+      - run: aws s3 cp lambda.zip s3://api.dev.espinoladesigns.com/lambda-verifications-dev-${CIRCLE_SHA1}.zip
+      - run: aws lambda update-function-code --function-name VerificationsDevFnc --s3-key lambda-verifications-prod-${CIRCLE_SHA1}.zip --s3-bucket api.dev.espinoladesigns.com
+      - run: aws apigateway create-deployment --rest-api-id "4g46qmn0ji" --stage-name dev --description "Deployment - ${CIRCLE_SHA1}"
+  deploy-prod:
     working_directory: ~/verifications
     docker:
       - image: cgswong/aws:latest
@@ -41,7 +51,13 @@ workflows:
   tbd:
     jobs:
       - build
-      - deploy:
+      - deploy-dev:
+          requires:
+            - build
+          filters:
+            branches:
+              only: dev
+      - deploy-prod:
           requires:
             - build
           filters:
